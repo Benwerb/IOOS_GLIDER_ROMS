@@ -8,6 +8,8 @@ slprj/
 # Output data (large CSVs should not be tracked)
 IOOS glider data */
 *.csv
+IOOS_DERIVED_PARAMS */
+*.csv
 
 # OS
 .DS_Store

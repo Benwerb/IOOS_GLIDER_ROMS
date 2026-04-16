@@ -1,6 +1,6 @@
 % --- Configuration ---
-rootDir  = 'C:\Users\bwerb\Documents\CUGNROMS';   % <-- change this on new machine
-year     = 2022;                                    % <-- change this per run
+if ~exist('dataDir','var'), dataDir = 'C:\Users\bwerb\Documents\CUGNROMS'; end  % <-- change this on new machine
+if ~exist('year','var'),    year    = 2022; end                                  % <-- change this per run
 
 % --- Spatial and temporal inputs ---
 maxLat   = 48.0;
@@ -10,7 +10,7 @@ maxLon   = -115.0;
 minTime  = sprintf('%d-01-01T00:00:00Z', year);
 maxTime  = sprintf('%d-01-01T00:00:00Z', year + 1);
 
-outDir   = fullfile(rootDir, sprintf('IOOS glider data %d', year));
+outDir   = fullfile(dataDir, sprintf('IOOS glider data %d', year));
 if ~exist(outDir, 'dir'), mkdir(outDir); end
 
 % Build search URL from inputs (CSV format for easy parsing)

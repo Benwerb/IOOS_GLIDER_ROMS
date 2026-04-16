@@ -1,9 +1,16 @@
-%% Configuration
-rootDir = 'C:\Users\bwerb\Documents\CUGNROMS';   % <-- change this on new machine
-year    = 2022;                                    % <-- change this per run
+%% Paths (relative to this script's GitHub parent folder)
+scriptDir = fileparts(mfilename('fullpath'));
+addpath(fullfile(scriptDir, 'functions'));
+githubDir = fileparts(scriptDir);
+addpath(genpath(fullfile(githubDir, 'CANYON-B')));
+addpath(genpath(fullfile(githubDir, 'ESPER')));
 
-fpath   = fullfile(rootDir, sprintf('IOOS glider data %d', year));
-outDir  = fullfile(fpath, 'IOOS_DERIVED_PARAMS');
+%% Configuration
+if ~exist('dataDir','var'), dataDir = 'C:\Users\bwerb\Documents\CUGNROMS'; end  % <-- change this on new machine
+if ~exist('year','var'),    year    = 2022; end                                  % <-- change this per run
+
+fpath   = fullfile(dataDir, sprintf('IOOS glider data %d', year));
+outDir  = fullfile(dataDir, 'IOOS_DERIVED_PARAMS', sprintf('IOOS_with_estimates_%d', year));
 if ~exist(outDir, 'dir'), mkdir(outDir); end
 
 %% Read in table properly
@@ -235,10 +242,4 @@ for i = 1:numel(files)
     writetable(T, fsave, 'WriteMode', 'append', 'WriteVariableNames', true);
     fprintf('  Saved to %s\n', fsave);
     clear fsave T s;
-end
-
-% --- helper ---
-function out = expandToFull(vals, idx, n)
-    out = nan(n, 1);
-    out(idx) = vals;
 end
