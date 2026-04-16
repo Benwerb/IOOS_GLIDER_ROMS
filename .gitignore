@@ -1,0 +1,14 @@
+# MATLAB
+*.asv
+*.m~
+*.mex*
+slprj/
+*.slxc
+
+# Output data (large CSVs should not be tracked)
+IOOS glider data */
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db
