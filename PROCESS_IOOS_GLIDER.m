@@ -54,9 +54,9 @@ for i = 1:numel(files)
     end
     opts.DataLines = [3 Inf];   % skip first 2 lines of metadata
     if hasOxygen
-        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','do','sigma'};
+        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','do','rho'};
     else
-        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','sigma'};
+        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','rho'};
     end
     disp(opts.VariableNames)
 
@@ -94,8 +94,8 @@ for i = 1:numel(files)
     T.Temperature_C_QF     = NaN(n, 1);
     T.Salinity_pss         = T_RAW.psal;
     T.Salinity_pss_QF      = NaN(n, 1);
-    T.Sigma_kg_m3    = T_RAW.sigma;
-    T.Sigma_kg_m3_QF = NaN(n, 1);
+    T.Rho_kg_m3    = T_RAW.rho;
+    T.Rho_kg_m3_QF = NaN(n, 1);
     T.Depth_m              = T_RAW.depth;
     T.Depth_m_QC           = NaN(n, 1);
 
