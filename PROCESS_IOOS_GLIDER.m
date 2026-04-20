@@ -141,9 +141,13 @@ for i = 1:numel(files)
         out  = vals < lo | vals > hi;
         bad  = bad | out;
     end
+    requiredFields = {'Temperature_C', 'Salinity_pss', 'Pressure_dbar'};
+    for f = 1:numel(requiredFields)
+        bad = bad | isnan(T.(requiredFields{f}));
+    end
     nRemoved = sum(bad);
     T(bad, :) = [];
-    fprintf('  QC removed %d rows out of range (%d remain)\n', nRemoved, height(T));
+    fprintf('  QC removed %d rows out of range or missing required fields (%d remain)\n', nRemoved, height(T));
 
     %% Compute ESPER
     sdn = datenum(T.mon_day_yr + timeofday(T.hh_mm));
