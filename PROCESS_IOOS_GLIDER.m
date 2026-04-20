@@ -2,15 +2,16 @@
 scriptDir = fileparts(mfilename('fullpath'));
 addpath(fullfile(scriptDir, 'functions'));
 githubDir = fileparts(scriptDir);
+addpath(genpath(fullfile(githubDir, 'GSW-Matlab')));
 addpath(genpath(fullfile(githubDir, 'CANYON-B')));
 addpath(genpath(fullfile(githubDir, 'ESPER')));
 
 %% Configuration
-if ~exist('dataDir','var'), dataDir = 'C:\Users\bwerb\Documents\CUGNROMS'; end  % <-- change this on new machine
-if ~exist('year','var'),    year    = 2022; end                                  % <-- change this per run
+if ~exist('dataDir','var'), dataDir = 'U:\'; end  % <-- change this on new machine
+if ~exist('year_to_process','var'),    year_to_process    = 2022; end           % <-- change this per run
 
-fpath   = fullfile(dataDir, sprintf('IOOS glider data %d', year));
-outDir  = fullfile(dataDir, 'IOOS_DERIVED_PARAMS', sprintf('IOOS_with_estimates_%d', year));
+fpath   = fullfile(dataDir, sprintf('IOOS glider data %d', year_to_process));
+outDir  = fullfile(dataDir, 'IOOS_DERIVED_PARAMS', sprintf('IOOS_with_estimates_%d', year_to_process));
 if ~exist(outDir, 'dir'), mkdir(outDir); end
 
 %% Read in table properly
@@ -121,6 +122,15 @@ for i = 1:numel(files)
     T.PCO2_pHTA_uatm             = NaN(n, 1);
 
     clear T_RAW;
+    
+    % Basic QC before deriving paramers
+    limits = struct( ...
+    'Temperature_C',            [0,    35  ], ...
+    'Salinity_pss',             [30,   37  ], ...
+    'Depth_m',                  [-5,    2000], ...
+    'Sigma_theta_kg_m3',        [900,   1100], ...
+    'Oxygen_umol_kg',           [0,    450 ] ...
+        );
 
     %% Compute ESPER
     sdn = datenum(T.mon_day_yr + timeofday(T.hh_mm));

@@ -1,6 +1,6 @@
 % --- Configuration ---
-if ~exist('dataDir','var'), dataDir = 'C:\Users\bwerb\Documents\CUGNROMS'; end  % <-- change this on new machine
-if ~exist('year','var'),    year    = 2022; end                                  % <-- change this per run
+if ~exist('dataDir','var'), dataDir = 'U:\'; end  % <-- change this on new machine
+if ~exist('year','var'),    year    = 2022; end   % <-- change this per run
 
 % --- Spatial and temporal inputs ---
 maxLat   = 48.0;
@@ -50,6 +50,7 @@ minTimeEnc = strrep(minTime, ':', '%3A');
 maxTimeEnc = strrep(maxTime, ':', '%3A');
 
 for i = 1:numel(DatasetIDs)
+% for i = 1
 
     DatasetID = DatasetIDs(i);
 
