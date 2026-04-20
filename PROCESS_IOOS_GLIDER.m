@@ -94,8 +94,8 @@ for i = 1:numel(files)
     T.Temperature_C_QF     = NaN(n, 1);
     T.Salinity_pss         = T_RAW.psal;
     T.Salinity_pss_QF      = NaN(n, 1);
-    T.Sigma_theta_kg_m3    = T_RAW.sigma;
-    T.Sigma_theta_kg_m3_QF = NaN(n, 1);
+    T.Sigma_kg_m3    = T_RAW.sigma;
+    T.Sigma_kg_m3_QF = NaN(n, 1);
     T.Depth_m              = T_RAW.depth;
     T.Depth_m_QC           = NaN(n, 1);
 
@@ -123,14 +123,27 @@ for i = 1:numel(files)
 
     clear T_RAW;
     
-    % Basic QC before deriving paramers
+    % Basic QC before deriving parameters (limits from Argo QC Manual, Table 11)
     limits = struct( ...
-    'Temperature_C',            [0,    35  ], ...
-    'Salinity_pss',             [30,   37  ], ...
-    'Depth_m',                  [-5,    2000], ...
-    'Sigma_theta_kg_m3',        [900,   1100], ...
-    'Oxygen_umol_kg',           [0,    450 ] ...
+        'Temperature_C',     [-2,   35  ], ...   % Argo global: [-2.5, 40]
+        'Salinity_pss',      [30,   38  ], ...   % Argo global: [2, 41]; regional upper expanded to 38
+        'Depth_m',           [-5,   2000], ...
+        'Oxygen_umol_kg',    [0,    500 ] ...    % Argo global: [0, 500]
         );
+
+    fields = fieldnames(limits);
+    bad = false(height(T), 1);
+    for f = 1:numel(fields)
+        fld  = fields{f};
+        vals = T.(fld);
+        lo   = limits.(fld)(1);
+        hi   = limits.(fld)(2);
+        out  = vals < lo | vals > hi;
+        bad  = bad | out;
+    end
+    nRemoved = sum(bad);
+    T(bad, :) = [];
+    fprintf('  QC removed %d rows out of range (%d remain)\n', nRemoved, height(T));
 
     %% Compute ESPER
     sdn = datenum(T.mon_day_yr + timeofday(T.hh_mm));
@@ -231,6 +244,16 @@ for i = 1:numel(files)
 
     %% Replace sentinel values with NaN
     T = standardizeMissing(T, [-10000000000, -999]);
+
+    %% Drop all-NaN columns
+    allNaN = varfun(@(x) isnumeric(x) && all(isnan(x)), T, 'OutputFormat', 'uniform');
+    T(:, allNaN) = [];
+
+    %% Round numeric columns to 3 decimal places
+    numVars = varfun(@isnumeric, T, 'OutputFormat', 'uniform');
+    for v = find(numVars)'
+        T.(T.Properties.VariableNames{v}) = round(T.(T.Properties.VariableNames{v}), 3);
+    end
 
     %% Save
     fsave = fullfile(outDir, [fname(1:end-4), '_ROMS.csv']);
