@@ -1,6 +1,6 @@
 %% Shared Configuration  ← only edit here
-dataDir = 'C:\Users\bwerb\Documents\CUGNROMS';    % <-- change this on new machine
-year    = 2022;                                    % <-- change this per run
+dataDir = 'U:\';    % <-- change this on new machine
+year_to_process    = 2022;                        % <-- change this per run
 
 %% Pipeline
 scriptDir = fileparts(mfilename('fullpath'));
