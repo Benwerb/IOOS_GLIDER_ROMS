@@ -56,15 +56,15 @@ for i = 1:numel(DatasetIDs)
 
     % Determine oxygen variable name for this instrument family
     oxygenName = '';   % default: no oxygen
-    if startsWith(DatasetID, 'UW')
+    if startsWith(DatasetID, 'UW', 'IgnoreCase', true)
         oxygenName = 'oxygen';
-    elseif startsWith(DatasetID, {'ce', 'gp', 'osu'})
+    elseif startsWith(DatasetID, {'ce', 'gp', 'osu'}, 'IgnoreCase', true)
         oxygenName = 'dissolved_oxygen';
-    elseif startsWith(DatasetID, 'dfo')   % units "umol l-1"
+    elseif startsWith(DatasetID, 'dfo', 'IgnoreCase', true)   % units "umol l-1"
         oxygenName = 'oxygen_concentration';
-    elseif startsWith(DatasetID, 'ocg')
+    elseif startsWith(DatasetID, 'ocg', 'IgnoreCase', true)
         oxygenName = 'dissolved_oxygen_sat';
-    elseif startsWith(DatasetID, 'sg')   % no oxygen data
+    elseif startsWith(DatasetID, 'sg', 'IgnoreCase', true)   % no oxygen data
         oxygenName = '';
     else
         warning('Unrecognized DatasetID prefix: %s — downloading without oxygen', DatasetID);

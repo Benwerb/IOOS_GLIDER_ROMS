@@ -27,17 +27,17 @@ for i = 1:numel(files)
     fprintf('file %d: %s\n', i, fname);
 
     % --- Determine per-instrument options ---
-    if contains(fname, {'ocg', 'UW'})
+    if contains(fname, {'ocg', 'UW'}, 'IgnoreCase', true)
         wmoIdx    = 3:5;
         hasOxygen = true;
-    elseif contains(fname, 'dfo')
+    elseif contains(fname, 'dfo', 'IgnoreCase', true)
         % dfo oxygen is in umol/l — verify units before use
         wmoIdx    = 10:12;
         hasOxygen = true;
-    elseif contains(fname, {'gp','ce','osu'})
+    elseif contains(fname, {'gp','ce','osu'}, 'IgnoreCase', true)
         wmoIdx    = 4:6;
         hasOxygen = true;
-    elseif contains(fname, 'sg')
+    elseif contains(fname, 'sg', 'IgnoreCase', true)
         wmoIdx    = 3:5;
         hasOxygen = false;
     else
@@ -69,7 +69,7 @@ for i = 1:numel(files)
     T_RAW.hh_mm.Format = 'HH:mm';
 
     % --- Convert dfo oxygen from umol/L to umol/kg ---
-    if contains(fname, 'dfo')
+    if contains(fname, 'dfo', 'IgnoreCase', true)
         p_tmp  = gsw_p_from_z(-T_RAW.depth, T_RAW.latn);
         SA_tmp = gsw_SA_from_SP(T_RAW.psal, p_tmp, T_RAW.lone, T_RAW.latn);
         CT_tmp = gsw_CT_from_t(SA_tmp, T_RAW.tempc, p_tmp);
@@ -123,12 +123,13 @@ for i = 1:numel(files)
 
     clear T_RAW;
     
-    % Basic QC before deriving parameters (limits from Argo QC Manual, Table 11)
+    % Basic QC before deriving parameters
+    % Argo BGC range reference: https://archimer.ifremer.fr/doc/00298/40879/42267.pdf (v1.1, p.26)
     limits = struct( ...
         'Temperature_C',     [-2,   35  ], ...   % Argo global: [-2.5, 40]
         'Salinity_pss',      [30,   38  ], ...   % Argo global: [2, 41]; regional upper expanded to 38
-        'Depth_m',           [-5,   2000], ...
-        'Oxygen_umol_kg',    [0,    500 ] ...    % Argo global: [0, 500]
+        'Depth_m',           [0,   2000], ...    % Argo park depth 2000m
+        'Oxygen_umol_kg',    [0,    500 ] ...    % Argo global: [0, 500]; BGC manual: [-5, 600]
         );
 
     fields = fieldnames(limits);
