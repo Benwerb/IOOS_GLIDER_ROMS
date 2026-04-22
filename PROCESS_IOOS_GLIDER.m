@@ -26,37 +26,32 @@ for i = 1:numel(files)
     fpath_full = fullfile(fpath, fname);
     fprintf('file %d: %s\n', i, fname);
 
-    % --- Determine per-instrument options ---
-    if contains(fname, {'ocg', 'UW'}, 'IgnoreCase', true)
-        wmoIdx    = 3:5;
-        hasOxygen = true;
-    elseif contains(fname, 'dfo', 'IgnoreCase', true)
-        % dfo oxygen is in umol/l — verify units before use
-        wmoIdx    = 10:12;
-        hasOxygen = true;
-    elseif contains(fname, {'gp','ce','osu'}, 'IgnoreCase', true)
-        wmoIdx    = 4:6;
-        hasOxygen = true;
-    elseif contains(fname, 'sg', 'IgnoreCase', true)
-        wmoIdx    = 3:5;
-        hasOxygen = false;
-    else
-        warning('Unrecognized file prefix: %s — skipping', fname);
-        continue
+    % --- Detect oxygen presence and units from file header ---
+    fid = fopen(fpath_full, 'r');
+    headerLine = fgetl(fid);
+    unitsLine  = fgetl(fid);
+    fclose(fid);
+    hasOxygen = contains(headerLine, 'oxygen');
+    if hasOxygen
+        cols              = strsplit(headerLine, ',');
+        units             = strsplit(unitsLine,  ',');
+        oxyCol            = find(contains(cols, 'oxygen'), 1);
+        oxyUnit            = strtrim(units{oxyCol});
+        oxyNeedsConversion = ~isempty(oxyUnit) && ~contains(oxyUnit, 'kg', 'IgnoreCase', true);
     end
 
     % --- Read CSV ---
-    nCols = 7 + hasOxygen;   % 8 cols with oxygen, 7 without
+    nCols = 8 + hasOxygen;   % 9 cols with oxygen, 8 without
     opts = detectImportOptions(fpath_full);
-    opts = setvaropts(opts, opts.VariableNames{1}, 'Type', 'char');
+    opts = setvaropts(opts, opts.VariableNames{1}, 'Type', 'char');  % time
     for c = 2:nCols
         opts = setvaropts(opts, opts.VariableNames{c}, 'Type', 'double');
     end
     opts.DataLines = [3 Inf];   % skip first 2 lines of metadata
     if hasOxygen
-        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','do','rho'};
+        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','do','rho','wmo_id'};
     else
-        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','rho'};
+        opts.VariableNames = {'time_UTC_','depth','latn','lone','tempc','psal','rho','wmo_id'};
     end
     disp(opts.VariableNames)
 
@@ -68,8 +63,8 @@ for i = 1:numel(files)
     T_RAW.hh_mm = T_RAW.time_UTC_;
     T_RAW.hh_mm.Format = 'HH:mm';
 
-    % --- Convert dfo oxygen from umol/L to umol/kg ---
-    if contains(fname, 'dfo', 'IgnoreCase', true)
+    % --- Convert oxygen from umol/L to umol/kg if needed ---
+    if hasOxygen && oxyNeedsConversion
         p_tmp  = gsw_p_from_z(-T_RAW.depth, T_RAW.latn);
         SA_tmp = gsw_SA_from_SP(T_RAW.psal, p_tmp, T_RAW.lone, T_RAW.latn);
         CT_tmp = gsw_CT_from_t(SA_tmp, T_RAW.tempc, p_tmp);
@@ -78,10 +73,18 @@ for i = 1:numel(files)
         clear p_tmp SA_tmp CT_tmp rho
     end
 
+    % --- Sanity-check oxygen scale (catches wrong prefix, e.g. mmol/kg or mL/L) ---
+    if hasOxygen
+        oxyMedian = median(T_RAW.do, 'omitnan');
+        if oxyMedian < 30 || oxyMedian > 500 % Lowerbound catches mmol/kg or mL/L
+            warning('  %s: oxygen median (%.2f) is outside expected umol/kg range [0, 500] — check units', fname, oxyMedian);
+        end
+    end
+
     % --- Build output table ---
     n = height(T_RAW);
     T = table();
-    T.WMO_ID              = repmat({fname(wmoIdx)}, n, 1);
+    T.WMO_ID              = T_RAW.wmo_id;
     T.Prof_num            = NaN(n, 1);
     T.mon_day_yr          = T_RAW.mon_day_yr;
     T.hh_mm               = T_RAW.hh_mm;

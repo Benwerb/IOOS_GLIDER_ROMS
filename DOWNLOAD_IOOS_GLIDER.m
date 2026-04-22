@@ -54,20 +54,24 @@ for i = 1:numel(DatasetIDs)
 
     DatasetID = DatasetIDs(i);
 
-    % Determine oxygen variable name for this instrument family
-    oxygenName = '';   % default: no oxygen
-    if startsWith(DatasetID, 'UW', 'IgnoreCase', true)
-        oxygenName = 'oxygen';
-    elseif startsWith(DatasetID, {'ce', 'gp', 'osu'}, 'IgnoreCase', true)
-        oxygenName = 'dissolved_oxygen';
-    elseif startsWith(DatasetID, 'dfo', 'IgnoreCase', true)   % units "umol l-1"
-        oxygenName = 'oxygen_concentration';
-    elseif startsWith(DatasetID, 'ocg', 'IgnoreCase', true)
-        oxygenName = 'dissolved_oxygen_sat';
-    elseif startsWith(DatasetID, 'sg', 'IgnoreCase', true)   % no oxygen data
-        oxygenName = '';
-    else
-        warning('Unrecognized DatasetID prefix: %s — downloading without oxygen', DatasetID);
+    % Query ERDDAP info endpoint to find the oxygen variable name
+    oxygenCandidates = {'dissolved_oxygen', 'oxygen', 'oxygen_concentration', ...
+                        'dissolved_oxygen_sat', 'dissolved_oxygen_saturation'};
+    infoUrl  = sprintf('https://gliders.ioos.us/erddap/info/%s/index.csv', DatasetID);
+    tmpInfo  = [tempname '.csv'];
+    oxygenName = '';
+    try
+        websave(tmpInfo, infoUrl);
+        infoT    = readtable(tmpInfo, 'TextType', 'string');
+        delete(tmpInfo);
+        varNames = infoT.Variable_Name(infoT.Row_Type == "variable");
+        match    = oxygenCandidates(ismember(oxygenCandidates, varNames));
+        if ~isempty(match)
+            oxygenName = match{1};
+        end
+    catch ME
+        fprintf('  Could not fetch info for %s: %s\n', DatasetID, ME.message);
+        if exist(tmpInfo, 'file'), delete(tmpInfo); end
     end
 
     if isempty(oxygenName)
@@ -77,7 +81,7 @@ for i = 1:numel(DatasetIDs)
     end
 
     url = sprintf(['https://gliders.ioos.us/erddap/tabledap/%s.csv' ...
-        '?time%%2Cdepth%%2Clatitude%%2Clongitude%%2Ctemperature%%2Csalinity' oxygenField '%%2Cdensity' ...
+        '?time%%2Cdepth%%2Clatitude%%2Clongitude%%2Ctemperature%%2Csalinity' oxygenField '%%2Cdensity%%2Cwmo_id' ...
         '&time%%3E=%s&time%%3C=%s'], ...
         DatasetID, minTimeEnc, maxTimeEnc);
     outFile = fullfile(outDir, [char(DatasetID) '.csv']);
