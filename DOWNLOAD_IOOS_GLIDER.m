@@ -52,7 +52,7 @@ maxTimeEnc = strrep(maxTime, ':', '%3A');
 for i = 1:numel(DatasetIDs)
 % for i = 1
 
-    DatasetID = DatasetIDs(i);
+    DatasetID = strtrim(DatasetIDs(i));
 
     % Query ERDDAP info endpoint to find the oxygen variable name
     oxygenCandidates = {'dissolved_oxygen', 'oxygen', 'oxygen_concentration', ...
@@ -62,9 +62,10 @@ for i = 1:numel(DatasetIDs)
     oxygenName = '';
     try
         websave(tmpInfo, infoUrl);
-        infoT    = readtable(tmpInfo, 'TextType', 'string');
+        lines    = strsplit(strtrim(fileread(tmpInfo)), newline);
         delete(tmpInfo);
-        varNames = infoT.Variable_Name(infoT.Row_Type == "variable");
+        varLines = lines(startsWith(lines, 'variable,'));
+        varNames = regexp(varLines, '(?<=^variable,)[^,]*', 'match', 'once');
         match    = oxygenCandidates(ismember(oxygenCandidates, varNames));
         if ~isempty(match)
             oxygenName = match{1};
