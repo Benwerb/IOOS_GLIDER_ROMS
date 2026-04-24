@@ -27,13 +27,20 @@ website  = ['https://gliders.ioos.us/erddap/search/advanced.html' baseParams];
 searchCSV = ['https://gliders.ioos.us/erddap/search/advanced.csv'  baseParams];
 
 % Fetch search results table and extract Dataset IDs
+% Use raw text parsing: Dataset ID is always the last column and never quoted
 tmpFile = [tempname '.csv'];
 websave(tmpFile, searchCSV);
-T = readtable(tmpFile, 'TextType', 'string');
+rawLines = strsplit(strtrim(fileread(tmpFile)), {'\r\n', '\n', '\r'});
 delete(tmpFile);
+rawLines = rawLines(~cellfun(@isempty, strtrim(rawLines)));
 
-% Dataset ID column is named "Dataset ID" (spaces become underscores in readtable)
-DatasetIDs = T.DatasetID;
+if ~contains(rawLines{1}, 'Dataset ID')
+    error('Unexpected ERDDAP CSV format. Header line: %s', rawLines{1});
+end
+
+% Extract last comma-separated token from each data row (= Dataset ID)
+tokens = regexp(rawLines(2:end), ',([^,]+)$', 'tokens', 'once');
+DatasetIDs = string(cellfun(@(t) strtrim(t{1}), tokens, 'UniformOutput', false));
 
 % If a base ID and its "-delayed" version both exist, keep only the "-delayed" one
 delayedIDs = DatasetIDs(endsWith(DatasetIDs, '-delayed'));
